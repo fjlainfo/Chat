@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat</title>
+        <meta charset="utf-8">
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+        <meta content="ie=edge" http-equiv="x-ua-compatible">        
+        <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
+        <style>                        
+            #chatApp
+            {                
+                background: linear-gradient(270deg, #ff9000, #59005c, #0e015d, #59005c, #ff9000);
+                background-size: 1000% 1000%;
+                height:100%;
+                -webkit-animation: AnimationName 30s ease infinite;
+                -moz-animation: AnimationName 30s ease infinite;
+                -o-animation: AnimationName 30s ease infinite;
+                animation: AnimationName 30s ease infinite;
+            }
+            @-webkit-keyframes AnimationName {
+                0%{background-position:0% 50%}
+                50%{background-position:100% 50%}
+                100%{background-position:0% 50%}
+            }
+            @-moz-keyframes AnimationName {
+                0%{background-position:0% 50%}
+                50%{background-position:100% 50%}
+                100%{background-position:0% 50%}
+            }
+            @-o-keyframes AnimationName {
+                0%{background-position:0% 50%}
+                50%{background-position:100% 50%}
+                100%{background-position:0% 50%}
+            }
+            @keyframes AnimationName {
+                0%{background-position:0% 50%}
+                50%{background-position:100% 50%}
+                100%{background-position:0% 50%}
+            }
+            #salaChat{
+                margin-top: 50px;
+            }
+        </style>
+        
+        <!-- Bootstrap itself -->
+        <link href="http://netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+        <!-- Icons -->
+        <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+    </head>
+    <body id="chatApp">
+                
+        <div class="container-fluid" >            
+        
+            <div id="telaUsername" class="col-sm-9" style="margin-top:50px">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <form id="frmInformeUsuario">
+                            <h4>Escreva seu nick:</h4>
+                            <div class="input-group">
+                                <span class="input-group-addon">
+                                    <span class="glyphicon glyphicon-user" aria-hidden="true"></span>                        
+                                </span>
+                                <input type="text" id="nickname" class="form-control input-md" placeholder="Digite seu nick...">
+                                <span class="input-group-btn">
+                                    <button type="submit" class="btn btn-primary btn-md">
+                                        <span class="glyphicon glyphicon-log-in" aria-hidden="true"></span>
+                                        &nbsp;Entrar
+                                    </button>
+                                </span>
+                            </div>                          
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            
+            <div id="salaChat" class="col-lg-12">  
+                <div class="row">
+                    <div class="col-sm-9">
+                        <div class="panel panel-default">                
+                            <div class="panel-heading">Mensagens</div>
+                            <div id="mensagens" class="panel-body" style="height:300px;overflow:auto"></div>
+                        </div>
+                        <form id="frmMensagens">
+                            <div class="input-group" style="margin-bottom:20px">
+                                <input id="cpMensagem" type="text" class="form-control input-sm" placeholder="Digite sua mensagem..." required>
+                                <span class="input-group-btn">
+                                    <button class="btn btn-primary btn-sm" type="submit">Enviar</button>
+                                </span>
+                            </div><!-- /input-group -->
+                        </form>
+                    </div>
+                    <div class="col-sm-3">            
+                        <div class="panel panel-default">                
+                            <div class="panel-heading">Usuários</div>
+                            <div id="usuarios" class="panel-body"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>                 
+        </div>
+    </body>
+        
+    <!-- Core JavaScript Files -->
+    <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="js/bootstrap.min.js"></script>
+                
+    <script>
+        $(function(){
+            var socket = io.connect();
+
+            var salaChat = $("#salaChat");
+            var telaUsername = $("#telaUsername");
+            var frmInformeUsuario = $("#frmInformeUsuario");
+            var nickname = $("#nickname");
+            var frmMensagens = $("#frmMensagens");
+            var cpMensagem = $("#cpMensagem");
+            var divMensagens = $("#mensagens");
+            var divUsuarios = $("#usuarios");
+
+
+            salaChat.hide();
+
+            frmInformeUsuario.submit(function(e){
+                e.preventDefault();
+                socket.emit('novo usuario', nickname.val(), function(data){
+                    if(data.retorno){
+                        telaUsername.hide();
+                        salaChat.show()
+                        cpMensagem.focus();
+                    }else{
+                        alert(data.msg);
+                        nickname.val("");
+                    }
+                });
+
+                frmMensagens.submit(function(e){
+                    e.preventDefault();
+                    socket.emit('enviar mensagem', cpMensagem.val());
+                    cpMensagem.val("");
+                    desceTela();
+
+                });
+
+                socket.on('nova mensagem', function(data){
+                    divMensagens.append("<strong>"+data.nick+": </strong>"+data.msg+"<br/>");
+                    desceTela();
+                });
+
+                socket.on('atualiza usuarios', function(usuarios){
+                    var listaUsuarios = "<ul>"
+
+                    $.each(usuarios, function(val, key){
+                        listaUsuarios += "<li>"+key+"</li>";
+                    });
+
+                    listaUsuarios += "</ul>"
+
+                    divUsuarios.empty().append(listaUsuarios);
+                });
+            });
+            
+            function desceTela() {
+                var elmnt = document.getElementById("mensagens");
+                elmnt.scrollTop = 100000;
+            }
+        });
+    </script>    
+</html>
